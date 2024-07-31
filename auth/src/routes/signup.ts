@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { body } from "express-validator";
 import jwt from "jsonwebtoken";
 import { BadRequstError, validateRequest } from "@chloe_ticketing/common";
@@ -14,12 +14,12 @@ router.post('/api/users/signup', [
     .trim()
     .isLength({ min: 4, max: 20 })
     .withMessage('Password must be between 4 and 20 characters'),
-], validateRequest, async (req: Request, res: Response) => {
+], validateRequest, async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    throw new BadRequstError('Email in use');
+    return next(new BadRequstError('Email in use'));
   }
 
   const user = User.build({ email, password });

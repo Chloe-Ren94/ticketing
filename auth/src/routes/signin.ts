@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { body } from "express-validator";
 import jwt from "jsonwebtoken";
 import { validateRequest, BadRequstError } from "@chloe_ticketing/common";
@@ -15,17 +15,17 @@ router.post('/api/users/signin', [
     .trim()
     .notEmpty()
     .withMessage('Password must be supplied')
-], validateRequest, async (req: Request, res: Response) => {
+], validateRequest, async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   const existingUser = await User.findOne({ email });
   if (!existingUser) {
-    throw new BadRequstError('Invalid credentials');
+    return next(new BadRequstError('Invalid credentials'));
   }
 
   const passwordMatch = await Password.compare(existingUser.password, password);
   if (!passwordMatch) {
-    throw new BadRequstError('Invalid credentials');
+    return next(new BadRequstError('Invalid credentials'));
   }
 
   // Generate JWT
