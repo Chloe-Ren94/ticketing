@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { app } from '../../app';
 import mongoose from 'mongoose';
+import { natsWrapper } from '../../nats-wrapper';
 
 it('returns a 404 if the provided ticket id does not exist', async () => {
   const id = new mongoose.Types.ObjectId().toHexString();
@@ -93,6 +94,8 @@ it('updates the ticket if the user provides valid inputs', async () => {
       price: 20
     })
     .expect(200); 
+
+  expect(natsWrapper.client.publish).toHaveBeenCalled();
 
   const ticketResponse = await request(app)
     .get(`/api/tickets/${response.body.id}`)
