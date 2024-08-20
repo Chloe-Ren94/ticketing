@@ -1,12 +1,14 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { NotAuthorizedError, NotFoundError, requireAuth } from '@chloe_ticketing/common';
 import { Order, OrderStatus } from '../models/order';
+import { OrderCancelledPublisher } from '../events/publishers/order-cancelled-publisher';
+import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
 // Update the order status to 'cancelled'. Not really delete the order.
 router.delete('/api/orders/:orderId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  const order = await Order.findById(req.params.orderId);
+  const order = await Order.findById(req.params.orderId).populate('ticket');
 
   if (!order) {
     return next(new NotFoundError());
@@ -20,6 +22,13 @@ router.delete('/api/orders/:orderId', requireAuth, async (req: Request, res: Res
   await order.save();
 
   // Publish an event saying an order has been cancelled
+  new OrderCancelledPublisher(natsWrapper.client).publish({
+    id: order.id,
+    version: order.version,
+    ticket: {
+      id: order.ticket.id
+    }
+  });
   
   // 204 stands for "No Content." It indicates that the request was successful, 
   // but there is no content to send in the response body.
