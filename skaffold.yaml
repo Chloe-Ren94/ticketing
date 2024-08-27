@@ -40,3 +40,11 @@ build:
         manual:
           - src: '/src/**/*.ts'
             dest: .
+    - image: chloeren/expiration
+      context: expiration
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: '/src/**/*.ts'
+            dest: .
